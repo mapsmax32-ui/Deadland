@@ -14,6 +14,11 @@ var interact_target: StaticBody3D
 var zombie: CharacterBody3D
 var zombie_speed := 1.5
 var game_over := false
+var player_skeleton: Skeleton3D
+var player_model: Node3D
+var animation_bones := {}
+var animation_phase := 0.0
+var walk_blend := 0.0
 
 func _ready() -> void:
     _make_world()
@@ -28,6 +33,7 @@ func _process(delta: float) -> void:
     if game_over:
         return
     _update_camera()
+    _animate_survivor(delta)
     _update_zombie(delta)
     _update_status()
     if Input.is_action_just_pressed("interact"):
@@ -78,15 +84,18 @@ func _make_player() -> void:
     player.set_script(load("res://scripts/player_controller.gd"))
     add_child(player)
     var model_path := "res://assets/models/characters/survivor.glb"
-    if ResourceLoader.exists(model_path):
-        var model_resource: PackedScene = load(model_path)
-        if model_resource != null:
-            var character_model := model_resource.instantiate()
+    var model_resource := load(model_path) as PackedScene if ResourceLoader.exists(model_path) else null
+    if model_resource != null:
+        var character_model := model_resource.instantiate() as Node3D
+        if character_model != null:
             character_model.name = "SurvivorVisual"
-            # Keep gameplay collision/controller on CharacterBody3D; GLB is visual only.
+            player_model = character_model
+            # Keep the model at its imported GLB scale; gameplay collision remains independent.
             character_model.position = Vector3(0, -0.8, 0)
             character_model.scale = Vector3.ONE
             player.add_child(character_model)
+            player_skeleton = _find_skeleton(character_model)
+            _cache_animation_bones()
         else:
             _make_fallback_player_visual()
     else:
@@ -104,6 +113,68 @@ func _make_player() -> void:
     add_child(camera)
     camera.current = true
     _update_camera()
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+    if node is Skeleton3D:
+        return node
+    for child in node.get_children():
+        var found := _find_skeleton(child)
+        if found != null:
+            return found
+    return null
+
+func _cache_animation_bones() -> void:
+    if player_skeleton == null:
+        return
+    animation_bones = {
+        "left_arm": -1,
+        "right_arm": -1,
+        "left_leg": -1,
+        "right_leg": -1,
+        "left_knee": -1,
+        "right_knee": -1
+    }
+    for i in range(player_skeleton.get_bone_count()):
+        var bone_name := player_skeleton.get_bone_name(i).to_lower()
+        if bone_name.contains("leftarm") and not bone_name.contains("forearm"):
+            animation_bones["left_arm"] = i
+        elif bone_name.contains("rightarm") and not bone_name.contains("forearm"):
+            animation_bones["right_arm"] = i
+        elif bone_name.contains("leftupleg"):
+            animation_bones["left_leg"] = i
+        elif bone_name.contains("rightupleg"):
+            animation_bones["right_leg"] = i
+        elif bone_name.contains("leftleg"):
+            animation_bones["left_knee"] = i
+        elif bone_name.contains("rightleg"):
+            animation_bones["right_knee"] = i
+
+func _animate_survivor(delta: float) -> void:
+    if not is_instance_valid(player_model) or not is_instance_valid(player):
+        return
+    var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length()
+    var target_walk_blend := 1.0 if horizontal_speed > 0.15 else 0.0
+    walk_blend = move_toward(walk_blend, target_walk_blend, delta * 5.0)
+    animation_phase += delta * (2.0 + walk_blend * 7.0)
+    var stride := sin(animation_phase) * walk_blend
+    # Animate the whole model gently so the imported skeleton stays intact.
+    player_model.position.y = -0.8 + abs(stride) * 0.045 + sin(animation_phase * 0.5) * 0.008
+    player_model.rotation.z = stride * 0.025
+    if player_skeleton != null:
+        _pose_bone("left_arm", Vector3(0, 0, 1), 0.48 + stride * 0.18)
+        _pose_bone("right_arm", Vector3(0, 0, 1), -0.48 - stride * 0.18)
+        _pose_bone("left_leg", Vector3(1, 0, 0), stride * 0.20)
+        _pose_bone("right_leg", Vector3(1, 0, 0), -stride * 0.20)
+        _pose_bone("left_knee", Vector3(1, 0, 0), maxf(0.0, -stride) * 0.28)
+        _pose_bone("right_knee", Vector3(1, 0, 0), maxf(0.0, stride) * 0.28)
+
+func _pose_bone(bone_key: String, axis: Vector3, angle: float) -> void:
+    var bone_index: int = animation_bones.get(bone_key, -1)
+    if bone_index >= 0:
+        player_skeleton.set_bone_pose_rotation(
+            bone_index,
+            Quaternion(axis, angle)
+        )
 
 func _make_fallback_player_visual() -> void:
     # Temporary placeholder until assets/models/characters/survivor.glb is copied into the project.
