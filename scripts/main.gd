@@ -94,9 +94,10 @@ func _make_player() -> void:
     cam.projection = Camera3D.PROJECTION_ORTHOGONAL
     cam.size = 14
     cam.position = Vector3(9, 10, 9)
-    cam.look_at(Vector3.ZERO, Vector3.UP)
-    cam.current = true
     player.add_child(cam)
+    cam.position = Vector3(9, 10, 9)
+    cam.look_at(player.global_position + Vector3(0, 0.5, 0), Vector3.UP)
+    cam.current = true
     camera = cam
 
 func _make_zombie() -> void:
