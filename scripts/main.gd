@@ -93,16 +93,13 @@ func _make_player() -> void:
     shape.height = 1.6
     col.shape = shape
     player.add_child(col)
-    var cam := Camera3D.new()
-    cam.name = "Camera3D"
-    cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-    cam.size = 14
-    cam.position = Vector3(9, 10, 9)
-    player.add_child(cam)
-    cam.position = Vector3(9, 10, 9)
-    cam.look_at(player.global_position + Vector3(0, 0.5, 0), Vector3.UP)
-    cam.current = true
-    camera = cam
+    camera = Camera3D.new()
+    camera.name = "ThirdPersonCamera"
+    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+    camera.fov = 68.0
+    add_child(camera)
+    camera.current = true
+    _update_camera()
 
 func _make_zombie() -> void:
     zombie = CharacterBody3D.new()
@@ -207,7 +204,12 @@ func _make_hud() -> void:
     root.add_child(attack_button)
 
 func _update_camera() -> void:
-    pass
+    if not is_instance_valid(player) or not is_instance_valid(camera):
+        return
+    var target := player.global_position + Vector3(0, 1.0, 0)
+    var desired := player.global_position + Vector3(0, 3.2, 6.5)
+    camera.global_position = camera.global_position.lerp(desired, 0.14)
+    camera.look_at(target, Vector3.UP)
 
 func _update_zombie(delta: float) -> void:
     if not is_instance_valid(zombie) or not is_instance_valid(player):
