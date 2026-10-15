@@ -78,14 +78,14 @@ func _make_player() -> void:
     player.set_script(load("res://scripts/player_controller.gd"))
     add_child(player)
     var model_path := "res://assets/models/characters/survivor.glb"
-    if ResourceLoader.exists(model_path):
-        var model_resource: PackedScene = load(model_path)
-        if model_resource != null:
-            var character_model := model_resource.instantiate()
+    var model_resource := load(model_path) as PackedScene if ResourceLoader.exists(model_path) else null
+    if model_resource != null:
+        var character_model := model_resource.instantiate() as Node3D
+        if character_model != null:
             character_model.name = "SurvivorVisual"
-            # Keep gameplay collision/controller on CharacterBody3D; GLB is visual only.
+            # The GLB stores its mesh at centimeter scale; compensate while keeping the scene's axis conversion.
             character_model.position = Vector3(0, -0.8, 0)
-            character_model.scale = Vector3.ONE
+            character_model.scale = Vector3(100, 100, 100)
             player.add_child(character_model)
         else:
             _make_fallback_player_visual()
