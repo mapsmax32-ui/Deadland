@@ -36,3 +36,31 @@ jobs:
           path: build/DEADLAND.apk
           if-no-files-found: error
           retention-days: 14
+
+  build-windows:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Prepare Windows export
+        run: |
+          mkdir -p build
+          mkdir -p ~/.config/godot ~/.local/share/godot/export_templates
+          cp -a /root/.config/godot/. ~/.config/godot/
+          cp -a /root/.local/share/godot/export_templates/. ~/.local/share/godot/export_templates/
+          godot --version
+      - name: Import project
+        run: godot --headless --editor --path . --quit
+      - name: Export Windows x64
+        run: godot --headless --verbose --path . --export-debug "Windows Desktop" build/DEADLAND.exe
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: DEADLAND-Windows-x64
+          path: |
+            build/DEADLAND.exe
+            build/DEADLAND.pck
+          if-no-files-found: error
+          retention-days: 14
