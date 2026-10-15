@@ -128,7 +128,11 @@ func _cache_animation_bones() -> void:
         return
     animation_bones = {
         "left_arm": -1,
-        "right_arm": -1
+        "right_arm": -1,
+        "left_leg": -1,
+        "right_leg": -1,
+        "left_knee": -1,
+        "right_knee": -1
     }
     for i in range(player_skeleton.get_bone_count()):
         var bone_name := player_skeleton.get_bone_name(i).to_lower()
@@ -136,6 +140,14 @@ func _cache_animation_bones() -> void:
             animation_bones["left_arm"] = i
         elif bone_name.contains("rightarm") and not bone_name.contains("forearm"):
             animation_bones["right_arm"] = i
+        elif bone_name.contains("leftupleg"):
+            animation_bones["left_leg"] = i
+        elif bone_name.contains("rightupleg"):
+            animation_bones["right_leg"] = i
+        elif bone_name.contains("leftleg"):
+            animation_bones["left_knee"] = i
+        elif bone_name.contains("rightleg"):
+            animation_bones["right_knee"] = i
 
 func _animate_survivor(delta: float) -> void:
     if not is_instance_valid(player_model) or not is_instance_valid(player):
@@ -149,8 +161,12 @@ func _animate_survivor(delta: float) -> void:
     player_model.position.y = -0.8 + abs(stride) * 0.045 + sin(animation_phase * 0.5) * 0.008
     player_model.rotation.z = stride * 0.025
     if player_skeleton != null:
-        _pose_bone("left_arm", Vector3(0, 0, 1), 0.48 + stride * 0.22)
-        _pose_bone("right_arm", Vector3(0, 0, 1), -0.48 - stride * 0.22)
+        _pose_bone("left_arm", Vector3(0, 0, 1), 0.48 + stride * 0.18)
+        _pose_bone("right_arm", Vector3(0, 0, 1), -0.48 - stride * 0.18)
+        _pose_bone("left_leg", Vector3(1, 0, 0), stride * 0.20)
+        _pose_bone("right_leg", Vector3(1, 0, 0), -stride * 0.20)
+        _pose_bone("left_knee", Vector3(1, 0, 0), maxf(0.0, -stride) * 0.28)
+        _pose_bone("right_knee", Vector3(1, 0, 0), maxf(0.0, stride) * 0.28)
 
 func _pose_bone(bone_key: String, axis: Vector3, angle: float) -> void:
     var bone_index: int = animation_bones.get(bone_key, -1)
