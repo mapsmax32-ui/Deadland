@@ -83,9 +83,9 @@ func _make_player() -> void:
         var character_model := model_resource.instantiate() as Node3D
         if character_model != null:
             character_model.name = "SurvivorVisual"
-            # The GLB stores its mesh at centimeter scale; compensate while keeping the scene's axis conversion.
+            # Keep the model at its imported GLB scale; gameplay collision remains independent.
             character_model.position = Vector3(0, -0.8, 0)
-            character_model.scale = Vector3(100, 100, 100)
+            character_model.scale = Vector3.ONE
             player.add_child(character_model)
         else:
             _make_fallback_player_visual()
