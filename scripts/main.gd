@@ -83,6 +83,10 @@ func _make_player() -> void:
     var head := _make_mesh_sphere(0.25, Color(0.72, 0.57, 0.43))
     head.position.y = 0.88
     player.add_child(head)
+    _add_limb(player, Vector3(-0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, -0.22))
+    _add_limb(player, Vector3(0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, 0.22))
+    _add_limb(player, Vector3(-0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, -0.04))
+    _add_limb(player, Vector3(0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, 0.04))
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.32
@@ -111,6 +115,10 @@ func _make_zombie() -> void:
     var head := _make_mesh_sphere(0.24, Color(0.43, 0.55, 0.34))
     head.position.y = 0.82
     zombie.add_child(head)
+    _add_limb(zombie, Vector3(-0.42, 0.08, 0), Vector3(0.18, 0.78, 0.18), Color(0.32, 0.36, 0.22), Vector3(0, 0, -0.45))
+    _add_limb(zombie, Vector3(0.42, 0.08, 0), Vector3(0.18, 0.78, 0.18), Color(0.32, 0.36, 0.22), Vector3(0, 0, 0.45))
+    _add_limb(zombie, Vector3(-0.20, -0.57, 0), Vector3(0.20, 0.72, 0.20), Color(0.23, 0.27, 0.19), Vector3(0, 0, -0.12))
+    _add_limb(zombie, Vector3(0.20, -0.57, 0), Vector3(0.20, 0.72, 0.20), Color(0.23, 0.27, 0.19), Vector3(0, 0, 0.12))
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.32
@@ -129,6 +137,10 @@ func _make_npc() -> void:
     var head := _make_mesh_sphere(0.23, Color(0.7, 0.54, 0.4))
     head.position.y = 0.83
     interact_target.add_child(head)
+    _add_limb(interact_target, Vector3(-0.40, 0.10, 0), Vector3(0.17, 0.68, 0.17), Color(0.38, 0.20, 0.16), Vector3(0, 0, -0.2))
+    _add_limb(interact_target, Vector3(0.40, 0.10, 0), Vector3(0.17, 0.68, 0.17), Color(0.38, 0.20, 0.16), Vector3(0, 0, 0.2))
+    _add_limb(interact_target, Vector3(-0.19, -0.54, 0), Vector3(0.19, 0.68, 0.19), Color(0.22, 0.18, 0.16), Vector3(0, 0, -0.03))
+    _add_limb(interact_target, Vector3(0.19, -0.54, 0), Vector3(0.19, 0.68, 0.19), Color(0.22, 0.18, 0.16), Vector3(0, 0, 0.03))
 
 func _make_hud() -> void:
     hud = CanvasLayer.new()
@@ -308,6 +320,20 @@ func _make_mesh_sphere(radius: float, color: Color) -> MeshInstance3D:
     mat.albedo_color = color
     mesh.material_override = mat
     return mesh
+
+func _add_limb(parent: Node3D, pos: Vector3, size: Vector3, color: Color, rot: Vector3) -> void:
+    var limb := MeshInstance3D.new()
+    var capsule := CapsuleMesh.new()
+    capsule.radius = min(size.x, size.z) * 0.5
+    capsule.height = size.y
+    limb.mesh = capsule
+    var mat := StandardMaterial3D.new()
+    mat.albedo_color = color
+    mat.roughness = 0.9
+    limb.material_override = mat
+    limb.position = pos
+    limb.rotation = rot
+    parent.add_child(limb)
 
 func _make_tree(pos: Vector3) -> void:
     _box("TreeTrunk", pos + Vector3(0, 0.7, 0), Vector3(0.35, 1.4, 0.35), Color(0.25, 0.18, 0.12))
