@@ -15,6 +15,7 @@ var zombie: CharacterBody3D
 var zombie_speed := 1.5
 var game_over := false
 var player_skeleton: Skeleton3D
+var player_model: Node3D
 var animation_bones := {}
 var animation_phase := 0.0
 var walk_blend := 0.0
@@ -88,6 +89,7 @@ func _make_player() -> void:
         var character_model := model_resource.instantiate() as Node3D
         if character_model != null:
             character_model.name = "SurvivorVisual"
+            player_model = character_model
             # Keep the model at its imported GLB scale; gameplay collision remains independent.
             character_model.position = Vector3(0, -0.8, 0)
             character_model.scale = Vector3.ONE
@@ -126,9 +128,7 @@ func _cache_animation_bones() -> void:
         return
     animation_bones = {
         "left_arm": -1,
-        "right_arm": -1,
-        "left_leg": -1,
-        "right_leg": -1
+        "right_arm": -1
     }
     for i in range(player_skeleton.get_bone_count()):
         var bone_name := player_skeleton.get_bone_name(i).to_lower()
@@ -136,23 +136,21 @@ func _cache_animation_bones() -> void:
             animation_bones["left_arm"] = i
         elif bone_name.contains("rightarm") and not bone_name.contains("forearm"):
             animation_bones["right_arm"] = i
-        elif bone_name.contains("leftupleg"):
-            animation_bones["left_leg"] = i
-        elif bone_name.contains("rightupleg"):
-            animation_bones["right_leg"] = i
 
 func _animate_survivor(delta: float) -> void:
-    if player_skeleton == null or not is_instance_valid(player):
+    if not is_instance_valid(player_model) or not is_instance_valid(player):
         return
     var horizontal_speed := Vector2(player.velocity.x, player.velocity.z).length()
     var target_walk_blend := 1.0 if horizontal_speed > 0.15 else 0.0
     walk_blend = move_toward(walk_blend, target_walk_blend, delta * 5.0)
     animation_phase += delta * (2.0 + walk_blend * 7.0)
     var stride := sin(animation_phase) * walk_blend
-    _pose_bone("left_arm", Vector3(0, 0, 1), 0.48 + stride * 0.38)
-    _pose_bone("right_arm", Vector3(0, 0, 1), -0.48 - stride * 0.38)
-    _pose_bone("left_leg", Vector3(1, 0, 0), stride * 0.48)
-    _pose_bone("right_leg", Vector3(1, 0, 0), -stride * 0.48)
+    # Animate the whole model gently so the imported skeleton stays intact.
+    player_model.position.y = -0.8 + abs(stride) * 0.045 + sin(animation_phase * 0.5) * 0.008
+    player_model.rotation.z = stride * 0.025
+    if player_skeleton != null:
+        _pose_bone("left_arm", Vector3(0, 0, 1), 0.48 + stride * 0.22)
+        _pose_bone("right_arm", Vector3(0, 0, 1), -0.48 - stride * 0.22)
 
 func _pose_bone(bone_key: String, axis: Vector3, angle: float) -> void:
     var bone_index: int = animation_bones.get(bone_key, -1)
