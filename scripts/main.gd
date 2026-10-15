@@ -77,16 +77,20 @@ func _make_player() -> void:
     player.position = Vector3(0, 0.9, 2)
     player.set_script(load("res://scripts/player_controller.gd"))
     add_child(player)
-    var body := _make_mesh_box(Vector3(0.65, 1.2, 0.45), Color(0.23, 0.38, 0.32))
-    body.position.y = 0.1
-    player.add_child(body)
-    var head := _make_mesh_sphere(0.25, Color(0.72, 0.57, 0.43))
-    head.position.y = 0.88
-    player.add_child(head)
-    _add_limb(player, Vector3(-0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, -0.22))
-    _add_limb(player, Vector3(0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, 0.22))
-    _add_limb(player, Vector3(-0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, -0.04))
-    _add_limb(player, Vector3(0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, 0.04))
+    var model_path := "res://assets/models/characters/survivor.glb"
+    if ResourceLoader.exists(model_path):
+        var model_resource: PackedScene = load(model_path)
+        if model_resource != null:
+            var character_model := model_resource.instantiate()
+            character_model.name = "SurvivorVisual"
+            # Keep gameplay collision/controller on CharacterBody3D; GLB is visual only.
+            character_model.position = Vector3(0, -0.8, 0)
+            character_model.scale = Vector3.ONE
+            player.add_child(character_model)
+        else:
+            _make_fallback_player_visual()
+    else:
+        _make_fallback_player_visual()
     var col := CollisionShape3D.new()
     var shape := CapsuleShape3D.new()
     shape.radius = 0.32
@@ -100,6 +104,19 @@ func _make_player() -> void:
     add_child(camera)
     camera.current = true
     _update_camera()
+
+func _make_fallback_player_visual() -> void:
+    # Temporary placeholder until assets/models/characters/survivor.glb is copied into the project.
+    var body := _make_mesh_box(Vector3(0.65, 1.2, 0.45), Color(0.23, 0.38, 0.32))
+    body.position.y = 0.1
+    player.add_child(body)
+    var head := _make_mesh_sphere(0.25, Color(0.72, 0.57, 0.43))
+    head.position.y = 0.88
+    player.add_child(head)
+    _add_limb(player, Vector3(-0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, -0.22))
+    _add_limb(player, Vector3(0.43, 0.12, 0), Vector3(0.18, 0.72, 0.18), Color(0.20, 0.31, 0.27), Vector3(0, 0, 0.22))
+    _add_limb(player, Vector3(-0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, -0.04))
+    _add_limb(player, Vector3(0.20, -0.58, 0), Vector3(0.20, 0.72, 0.20), Color(0.16, 0.19, 0.18), Vector3(0, 0, 0.04))
 
 func _make_zombie() -> void:
     zombie = CharacterBody3D.new()
